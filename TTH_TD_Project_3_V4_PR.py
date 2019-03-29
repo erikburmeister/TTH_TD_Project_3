@@ -253,6 +253,7 @@ def display_entries():
 
             if display_entries_selection == 'd':
                 del ENTRIES[n]
+                entry_to_csv()
                 n -= 1
 
             if display_entries_selection == 'r':
