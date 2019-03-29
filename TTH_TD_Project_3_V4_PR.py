@@ -1,4 +1,3 @@
-
 import csv, datetime, os, re
 
 ENTRIES = []
