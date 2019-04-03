@@ -1,5 +1,6 @@
 import csv, datetime, os, re
 
+
 ENTRIES = []
 
 
@@ -10,13 +11,98 @@ ENTRIES = []
            #[datetime.datetime(2019, 3, 29, 0, 0), 'Task', 20, 'tomorrow'],
            #[datetime.datetime(2019, 4, 1, 0, 0), 'April Fools', 40, 'Joke-day'], 
            #[datetime.datetime(2019, 4, 1, 0, 0), 'May fifth month', 40, 'another time']]
-        
+
 
 def clear_screen():
+    """Clears the screen from any previous output."""
+
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
+def csv_header():
+    """Creates a csv file with the desired header row."""
+    
+    with open('work_log.csv', 'w') as csvfile:
+        fieldnames = [
+            "Date",
+            "Task Name",
+            "Time Spent (Rounded minutes)", 
+            "Notes (Optional)"
+        ]
+        
+        t_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        t_writer.writeheader()
+
+
+def csv_data_gatherer():
+    """Gathers data from csv file if it exists. Otherwise it creates one."""
+    
+    try:
+        
+        with open('work_log.csv', mode='r', newline='') as csv_file:
+            data = csv.DictReader(csv_file)
+            rows = list(data)
+
+            data_from_csv = []
+            
+            for row in rows:
+                data_to_list = []
+                if row["Date"]:
+                    string_date = row["Date"]
+                    sds = string_date.split("-")
+                    sd_to_obj = datetime.datetime.strptime(
+                        "{}/{}/{}".format(
+                            sds[0],sds[1],sds[2][:2]), '%Y/%m/%d')
+                    
+                    data_to_list.append(sd_to_obj)
+                    data_to_list.append(row["Task Name"])
+                    data_to_list.append(int(row["Time Spent (Rounded minutes)"]))
+                    data_to_list.append(row["Notes (Optional)"])
+                    data_from_csv.append(data_to_list)
+
+            for x in data_from_csv:
+                ENTRIES.append(x)
+            
+    except FileNotFoundError:
+        csv_header()
+        
+
+def entry_to_csv():
+    """Takes an entry and appends the info to the csv file."""
+    
+    with open('work_log.csv', 'a') as csvfile:
+        fieldnames = [
+            "Date",
+            "Task Name",
+            "Time Spent (Rounded minutes)", 
+            "Notes (Optional)"
+        ]
+        
+        t_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        n = 0
+        for x in ENTRIES:
+            t_writer.writerow({"Date":ENTRIES[n][0],
+                               "Task Name":ENTRIES[n][1],
+                               "Time Spent (Rounded minutes)":ENTRIES[n][2],
+                               "Notes (Optional)":ENTRIES[n][3]})
+            n += 1
+
+            
+def csv_starter():
+    """Checks that a csv file is created once per run of the app."""
+
+    z = 0
+    for _ in range(0,1):
+        if z == 0:
+            csv_data_gatherer()
+        z +=1
+
+
 def main_menu():
+    """Displays the main menu of the app."""
+    
+    csv_starter()
     
     main_menu_options = """
 WORK LOG
@@ -24,13 +110,14 @@ WORK LOG
 What Would you like to do?
 A) Add new entry
 B) Search in existing entries
-C) Display entries
-D) Quit program 
+C) Quit program 
 """
 
     main_menu_answer = ''
 
-    while not main_menu_answer == 'a' or not main_menu_answer == 'b' or not main_menu_answer == 'c':
+    while (not main_menu_answer == 'a' or 
+    not main_menu_answer == 'b' or  
+    not main_menu_answer == 'c'):
         
         print(main_menu_options)
 
@@ -39,47 +126,28 @@ D) Quit program
         if main_menu_answer == 'a':
             clear_screen()
             add_new_entry()
-            break
             
         elif main_menu_answer == 'b':
             clear_screen()
             search_by_menu()
-            break
-            
+              
         elif main_menu_answer == 'c':
-            clear_screen()
-            display_entries()
-            break
-            
-        elif main_menu_answer == 'd':
+            csv_header()
             entry_to_csv()
             clear_screen()
-            print("Thank you for using Work Log. See you later!")
             break
             
         else:
             print("That's not a valid choice.")
             input("Press enter to try again.")
             clear_screen()
-
-
-def entry_to_csv():
-    
-    with open('work_log.csv', 'w') as csvfile:
-        fieldnames = ["Date","Task Name","Time Spent (Rounded minutes)", "Notes (Optional)"]
-        t_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        t_writer.writeheader()
-        
-        n = 0
-        for x in ENTRIES:
-            t_writer.writerow({"Date":ENTRIES[n][0].strftime("%m/%d/%Y"),
-                               "Task Name":ENTRIES[n][1],
-                               "Time Spent (Rounded minutes)":ENTRIES[n][2],
-                               "Notes (Optional)":ENTRIES[n][3]})
-            n += 1
             
+    print("Thank you for using Work Log.")
+    print("See you later!")
+
 
 def add_new_entry():
+    """Add an entry with a date, title, time spent, and notes."""
     
     new_entry = []
 
@@ -90,10 +158,11 @@ def add_new_entry():
         time_format = '%m/%d/%Y'
         
         try:
-            validate_date = datetime.datetime.strptime(date_of_task, time_format)
+            validate_date = datetime.datetime.strptime(
+                date_of_task, time_format)
             
         except ValueError:
-            print("That's not a valid date or MM/DD/YYYY format. Try again.")
+            print("That's not a valid date or MM/DD/YYYY format.")
             input("Press enter to try again.")
             clear_screen()
             
@@ -102,7 +171,9 @@ def add_new_entry():
     
     clear_screen()
     dots = date_of_task.split("/")
-    obj_dot = datetime.datetime.strptime("{}/{}/{}".format(dots[2],dots[0],dots[1]), '%Y/%m/%d')
+    obj_dot = datetime.datetime.strptime(
+        "{}/{}/{}".format(dots[2],dots[0],dots[1]), '%Y/%m/%d')
+    
     new_entry.append(obj_dot)
 
     title_of_the_task = input("Title of the task: ")
@@ -133,10 +204,10 @@ def add_new_entry():
     print("The entry has been added. Press enter to return to the menu. ")
     input()
     clear_screen()
-    main_menu()
-    
+
 
 def edit_date_of_entry():
+    """creates a date that can then substitute an existing one."""
     
     clear_screen()
 
@@ -147,10 +218,11 @@ def edit_date_of_entry():
         time_format = '%m/%d/%Y'
         
         try:
-            validate_date = datetime.datetime.strptime(edit_date_of_task, time_format)
+            validate_date = datetime.datetime.strptime(
+                edit_date_of_task, time_format)
             
         except ValueError:
-            print("That's not a valid date or MM/DD/YYYY format. Try again. ")
+            print("That's not a valid date or MM/DD/YYYY format.")
             input("Press enter to try again.")
             clear_screen()
             
@@ -158,12 +230,14 @@ def edit_date_of_entry():
             break
     
     edots = edit_date_of_task.split("/")
-    obj_edot = datetime.datetime.strptime("{}/{}/{}".format(edots[2],edots[0],edots[1]), '%Y/%m/%d')
+    obj_edot = datetime.datetime.strptime(
+        "{}/{}/{}".format(edots[2],edots[0],edots[1]), '%Y/%m/%d')
 
     return obj_edot
 
 
 def edit_title_of_entry():
+    """creates a title that can then substitute an existing one."""
     
     clear_screen()
     edit_title_of_the_task = input("Title of the task: ")
@@ -172,6 +246,7 @@ def edit_title_of_entry():
 
 
 def edit_time_spent():
+    """creates a time that can then substitute an existing one."""
     
     clear_screen()
     
@@ -183,7 +258,7 @@ def edit_time_spent():
         except:
             print("That's not a number. Try again.")
             input("Press enter to try again.")
-            clear_screen()
+            clear_clear_screen()
         
         else:
             break
@@ -192,6 +267,7 @@ def edit_time_spent():
 
 
 def edit_task_notes():
+    """creates notes that can then substitute an existing one."""
     
     clear_screen()
     edit_task_notes = input("Notes (Optional, you can leave this empty): ")
@@ -199,22 +275,26 @@ def edit_task_notes():
     return edit_task_notes
 
 
-def display_entries():
+def display_entries(list):
+    """Displays entries and let's you scroll through them. 
+    The list parameter needs to hold entries in a format as such
+    [date, title, time spent, notes]
+    """
     
     n = 0
     while True:
         
-        if len(ENTRIES) >= 1:
+        if len(list) >= 1:
             
             if n == -1:
                 n += 1
                 
-            print("Date: {}".format(ENTRIES[n][0].strftime("%m/%d/%Y")))
-            print("Task: {}".format(ENTRIES[n][1]))
-            print("Time To Complete: {} minutes".format(ENTRIES[n][2]))
-            print("Notes: {}".format("".join(ENTRIES[n][3])))
+            print("Date: {}".format(list[n][0].strftime("%m/%d/%Y")))
+            print("Task: {}".format(list[n][1]))
+            print("Time To Complete: {} minutes".format(list[n][2]))
+            print("Notes: {}".format("".join(list[n][3])))
             print("")
-            print("Result {} of {}".format((n+1), len(ENTRIES)))
+            print("Result {} of {}".format((n+1), len(list)))
             print("")
 
             choices = ["[N]ext", "[P]revious", "[E]dit",
@@ -223,7 +303,7 @@ def display_entries():
             if n == 0:
                 choices.remove("[P]revious")
 
-            if n == (len(ENTRIES)-1):
+            if n == (len(list)-1):
                 choices.remove("[N]ext")
 
             print("{}".format(', '.join(choices)))
@@ -236,24 +316,28 @@ def display_entries():
             elif display_entries_selection == 'p' and n != 0:
                 n -= 1
 
-            if display_entries_selection == 'n' and n == len(ENTRIES):
+            if display_entries_selection == 'n' and n == len(list):
                 n = n
 
-            elif display_entries_selection == 'n' and n != len(ENTRIES) - 1:
+            elif display_entries_selection == 'n' and n != len(list) - 1:
                 n += 1
 
             if display_entries_selection == 'e':
-                
-                ENTRIES[n][0] = edit_date_of_entry()
-                ENTRIES[n][1] = edit_title_of_entry()
-                ENTRIES[n][2] = edit_time_spent()
-                ENTRIES[n][3] = edit_task_notes()
+                list[n][0] = edit_date_of_entry()
+                list[n][1] = edit_title_of_entry()
+                list[n][2] = edit_time_spent()
+                list[n][3] = edit_task_notes()
                 clear_screen()
+                csv_header()
                 entry_to_csv()
 
             if display_entries_selection == 'd':
-                del ENTRIES[n]
-                entry_to_csv()
+                if list[n] in ENTRIES:
+                    ENTRIES.remove(list[n])
+                    csv_header()
+                    entry_to_csv()
+
+                del list[n] 
                 n -= 1
 
             if display_entries_selection == 'r':
@@ -262,16 +346,13 @@ def display_entries():
             clear_screen()
             
         else:
-            print("There are no entries.")
-            print("Press enter to return to main menu.")
-            input()
             break
             
     clear_screen()
-    main_menu()
     
-
+   
 def search_by_menu():
+    """Displays the search menu of the app."""
     
     search_by_menu = """
 Do you want to search by: 
@@ -296,31 +377,25 @@ F) Return to menu
         if search_by_answer == 'a':
             clear_screen()
             exact_date()
-            break
             
         elif search_by_answer == 'b':
             clear_screen()
             range_of_dates()
-            break
             
         elif search_by_answer == 'c':
             clear_screen()
             exact_search()
-            break
             
         elif search_by_answer == 'd':
             clear_screen()
             find_by_pattern()
-            break
             
         elif search_by_answer == 'e':
             clear_screen()
             exact_time_spent()
-            break
             
         elif search_by_answer == 'f':
             clear_screen()
-            main_menu()
             break
             
         else:
@@ -330,6 +405,7 @@ F) Return to menu
             
 
 def exact_date():
+    """Searches the list of entries through the date."""
     
     while True:
         
@@ -341,7 +417,7 @@ def exact_date():
             test_date = datetime.datetime.strptime(exact_date, time_format)
             
         except ValueError:
-            print("That's not a valid date or MM/DD/YYYY format. Try again. ")
+            print("That's not a valid date or MM/DD/YYYY format.")
             input("Press enter to try again.")
             clear_screen()
  
@@ -349,42 +425,35 @@ def exact_date():
             break
                    
     eds = exact_date.split("/")
-    obj_ed = datetime.datetime.strptime("{}/{}/{}".format(eds[2],eds[0],eds[1]), '%Y/%m/%d')
+    obj_ed = datetime.datetime.strptime(
+        "{}/{}/{}".format(eds[2],eds[0],eds[1]), '%Y/%m/%d')
 
     real_entries = []
     for x in ENTRIES:
         if obj_ed in x:
             real_entries.append(x)
-            
             clear_screen()
-            print("Date: {}".format(real_entries[0][0].strftime("%m/%d/%Y")))
-            print("Task: {}".format(real_entries[0][1]))
-            print("Time To Complete: {} minutes".format(real_entries[0][2]))
-            print("Notes: {}".format(real_entries[0][3]))
-            print("")
-            print("Press enter to return to the search menu.")
-            input()
-            clear_screen()
-            break
             
+    if len(real_entries) >= 1:
+        display_entries(real_entries)
+  
     if len(real_entries) == 0:
         clear_screen()
-        print("An entry with the date {} doesn't exist.".format(exact_date))
-        print("")
+        print("There are no entries with the date {}.".format(exact_date))
         print("Press enter to return to the search menu.")
         input()
         clear_screen()
-        
-    search_by_menu()
     
 
 def range_of_dates():
+    """Searches the list of entries between two dates."""
 
     while True:
         
         print("Enter two dates. The search will find ")
-        print("all the entries between first date and the end date.")
+        print("all the entries between start date and the end date.")
         print()
+        
         first_date = input("From: (Please use MM/DD/YYYY) ")
         time_format = '%m/%d/%Y'
         
@@ -392,7 +461,7 @@ def range_of_dates():
             test_date = datetime.datetime.strptime(first_date, time_format)
             
         except ValueError:
-            print("That's not a valid date or MM/DD/YYYY format. Try again. ")
+            print("That's not a valid date or MM/DD/YYYY format.")
             input("Press enter to try again.")
             clear_screen()
             
@@ -400,7 +469,9 @@ def range_of_dates():
             break
             
     fds = first_date.split("/")
-    obj_fd = datetime.datetime.strptime("{}/{}/{}".format(fds[2],fds[0],fds[1]), '%Y/%m/%d')
+    obj_fd = datetime.datetime.strptime(
+        "{}/{}/{}".format(fds[2],fds[0],fds[1]), '%Y/%m/%d')
+    
     clear_screen()
     
     while True:
@@ -420,83 +491,38 @@ def range_of_dates():
             break
     
     sds = second_date.split("/")
-    obj_sd = datetime.datetime.strptime("{}/{}/{}".format(sds[2],sds[0],sds[1]), '%Y/%m/%d')
+    obj_sd = datetime.datetime.strptime(
+        "{}/{}/{}".format(sds[2],sds[0],sds[1]), '%Y/%m/%d')
+    
     clear_screen()
     
-    print("These are all the entries dated between {} and {}.".format(first_date, second_date))
+    print("These are all the entries dated between {} and {}.".format(
+        first_date, second_date))
     print()
     
-    n = 0
     range_of_entries = []
     for x in ENTRIES:
-        if ((x[0] > obj_fd and x[0] < obj_sd
+        if ((x[0] >= obj_fd and x[0] < obj_sd
         or x[0] < obj_fd and x[0] >= obj_sd)):
             range_of_entries.append(x)
             
-            print("----------------")
-            print("Date: {}".format(range_of_entries[n][0].strftime("%m/%d/%Y")))
-            print("Task: {}".format(range_of_entries[n][1]))
-            print("Time To Complete: {} minutes".format(range_of_entries[n][2]))
-            print("Notes: {}".format(range_of_entries[n][3]))
-            print("")
-            n += 1
+    if len(range_of_entries) >= 1:         
+        display_entries(range_of_entries)
             
     if len(range_of_entries) == 0:
         clear_screen()
-        print("There are no entries with the dates {} and {}".format(first_date, second_date))
+        print("There are no entries between the dates {} and {}".format(
+            first_date, second_date))
+        print("Press enter to return to the search menu.")
+        input()
     
-    print("Press enter to return to the search menu.")
-    input()
     clear_screen()
-        
-    search_by_menu()
-    
 
-def exact_time_spent():
-    
-    while True:
-        
-        try:
-            print("Enter the exact amount of time spent on a task.")
-            exact_time_spent = int(input("Time spent (rounded minutes): "))
-        
-        except:
-            print("That's not a number. Try again.")
-            input("Press enter to try again.")
-            clear_screen()
-        
-        else:
-            break
-    
-    clear_screen()
-    
-    n = 0
-    real_times = []
-    for x in ENTRIES:
-        if exact_time_spent in x:
-            real_times.append(x)
-            
-            print("----------------")
-            print("Date: {}".format(real_times[n][0].strftime("%m/%d/%Y")))
-            print("Task: {}".format(real_times[n][1]))
-            print("Time To Complete: {} minutes".format(real_times[n][2]))
-            print("Notes: {}".format(real_times[n][3]))
-            print("")
-            n += 1
-            
-    if len(real_times) == 0:
-        print("An entry with the time spent on a") 
-        print("task of {} minutes doesn't exist.".format(exact_time_spent))
-    
-    print("")
-    print("Press enter to return to the search menu.")
-    input()
-    clear_screen()
-        
-    search_by_menu()
-    
-
+ 
 def exact_search():
+    """Searches the list of entries through words and part of words in
+    the title and/or notes.
+    """
     
     print("Enter the exact word or part of the word you are searching for.")
     print("That might be found in either the task name or notes.")
@@ -510,32 +536,31 @@ def exact_search():
     print("The search term is: {}".format(exact_word_search))
     print("")
     
-    n = 0
     entries_with_search_word = []
     for x in ENTRIES:
         if exact_word_search in x[1] or exact_word_search in x[3]:
             entries_with_search_word.append(x)
             
-            print("----------------")
-            print("Date: {}".format(entries_with_search_word[n][0].strftime("%m/%d/%Y")))
-            print("Task: {}".format(entries_with_search_word[n][1]))
-            print("Time To Complete: {} minutes".format(entries_with_search_word[n][2]))
-            print("Notes: {}".format(entries_with_search_word[n][3]))
-            print("")
-            n += 1 
-            
-    print("")
-    print("Press enter to return to the search menu.")
-    input()
-    clear_screen()
-        
-    search_by_menu()
+    if len(entries_with_search_word) >= 1:         
+        display_entries(entries_with_search_word) 
     
+    
+    if len(entries_with_search_word) == 0:
+        clear_screen()
+        print("There are no entries that contain the word {}".format
+              (exact_word_search))
+        print("Press enter to return to the search menu.")
+        input()
+        
+    clear_screen()
+
 
 def find_by_pattern():
+    """Searches the list of entries with RegEx patterns 
+    through characters in the title and/or notes.
+    """
     
     print("Use RegEx to find desired information in the task name or notes.")
-    
     print("")
     regex_search = input('Regex Pattern: ')
     print("")
@@ -546,34 +571,64 @@ def find_by_pattern():
     except re.error:
         clear_screen()
         print("No results found.")
-        input("Press enter to try again.")
     
     else:
         clear_screen()
         print("Regex Pattern: {}".format(regex_search))
         print("")
         
-        n = 0
         entries_with_regex = []
-        
         for x in ENTRIES:
             if compiled_search.search(x[1]) or compiled_search.search(x[3]):
                 entries_with_regex.append(x)
                 
-                print("----------------")
-                print("Date: {}".format(entries_with_regex[n][0].strftime("%m/%d/%Y")))
-                print("Task: {}".format(entries_with_regex[n][1]))
-                print("Time To Complete: {} minutes".format(entries_with_regex[n][2]))
-                print("Notes: {}".format(entries_with_regex[n][3]))
-                n += 1  
+        if len(entries_with_regex) >= 1:         
+            display_entries(entries_with_regex)    
 
+    clear_screen()
+    print("Press enter to return to the search menu.")
+    input()
+    clear_screen()
+
+
+def exact_time_spent():
+    """Searches the list of entries through exact time in the time spent
+    section of the entry.
+    """
+    
+    while True:
+        
+        try:
+            print("Enter the exact amount of time spent on a task.")
+            exact_time_spent = int(input("Time spent (rounded minutes): "))
+        
+        except:
+            print("That's not a number. Try again.")
+            clear_screen()
+        
+        else:
+            break
+    
+    clear_screen()
+    
+    real_times = []
+    for x in ENTRIES:
+        if exact_time_spent in x:
+            real_times.append(x)
+            
+    if len(real_times) >= 1:         
+        display_entries(real_times)        
+            
+    if len(real_times) == 0:
+        print("An entry with the time spent on a") 
+        print("task of {} minutes doesn't exist.".format(exact_time_spent))
+    
     print("")
     print("Press enter to return to the search menu.")
     input()
     clear_screen()
-        
-    search_by_menu()
-    
 
+  
 if __name__ == '__main__':
     main_menu()
+
